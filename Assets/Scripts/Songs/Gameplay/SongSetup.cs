@@ -4,6 +4,7 @@ using Songs.Model;
 using UnityEngine;
 using UnityEngine.UI;
 using System;
+using System.Collections;
 namespace Songs.Gameplay {
 	public class SongSetup : MonoBehaviour {
 
@@ -14,14 +15,38 @@ namespace Songs.Gameplay {
 		public Song readSong(string file) {
 			string path = "Songs/" + file + "/";
 			List<SongNote> notes = MidiParser.readMidi(basePath + path + "notes.mid");
+			Debug.Log(MidiParser.readMidi(basePath + path + "notes.mid"));
 			AudioClip songBackground = Resources.Load<AudioClip>(path + "background");
 			AudioClip hitNoise = Resources.Load<AudioClip>(path + "instrument");
 			//Song test = Song(notes, songBackground, hitNoise);
-			return new Song(notes, songBackground, hitNoise);
+			return new Song(notes, songBackground, hitNoise, getDifficulty(notes));
 		}
-		/*public float getDifficulty(songObj){
+		
+		public float getDifficulty(List<SongNote> notes){
+			int numnotes = notes.Count;
 			
-		}*/
+			List<float> startDifference = new List<float>();
+			for(int k = 1;k<numnotes;k++){
+				 startDifference.Add(notes[k].startTime-notes[k-1].startTime);
+			}
+			float[] output = startDifference.ToArray();
+			float sum = 0;
+			 for( var i = 0; i < output.Length; i++) {
+    			 sum += output[i];
+ 				}
+ 			float average = sum / output.Length;
+			int difficulty =  Convert.ToInt32(-6*(Math.Log(average,10))+4.1);
+			Debug.Log(difficulty);
+			if (difficulty<=0){
+				difficulty = 1;
+			}
+			else if(difficulty>10){
+				difficulty = 10;
+			}
+			return difficulty;
+				
+			
+		}
 		public List<Lane> setupLanes() {
 			List<Lane> lanes = new List<Lane>();
 			
@@ -32,7 +57,7 @@ namespace Songs.Gameplay {
 			float screenToWorld = cameraHeight / Screen.height;
 			Vector2 startingPoint = new Vector2(-1 * Screen.width * screenToWorld, cameraHeight) * 0.5f;
 		
-			InputSettings.setToDefaultMidi();
+			//InputSettings.setToDefaultMidi();
 			
 			float laneWidth = Screen.width * 1f / InputSettings.keys.Length * screenToWorld;
 			for (int i = 0; i < InputSettings.keys.Length; i++) {
@@ -47,9 +72,7 @@ namespace Songs.Gameplay {
 			for (int j=InputSettings.middleC; j<InputSettings.keys.Length;j++){
 				Lane selectedLane = lanes[j];
 				Text noteText = selectedLane.GetComponentInChildren<Text>();
-				Debug.Log(index);
 				if (index>=notes.Length){
-					Debug.Log(index%notes.Length);
 					noteText.text=notes[index%notes.Length];
 				}
 				else{
